@@ -1,4 +1,6 @@
 package com.gupaoedu.mvcframework.v1.servlet;
+import cn.hutool.core.util.ObjectUtil;
+import cn.hutool.core.util.StrUtil;
 import com.gupaoedu.mvcframework.annotation.GPAutowired;
 import com.gupaoedu.mvcframework.annotation.GPController;
 import com.gupaoedu.mvcframework.annotation.GPRequestMapping;
@@ -46,7 +48,9 @@ public class GPDispatcherServlet extends HttpServlet {
             configContext.load(is);
             String scanPackage = configContext.getProperty("scanPackage");
             doScanner(scanPackage);
-            for (String className : mapping.keySet()) {
+            //不做深拷贝有并发修改异常问题，java.util.ConcurrentModificationException
+            Map<String,Object> tempMap = ObjectUtil.cloneByStream(mapping);
+            for (String className : tempMap.keySet()) {
                 if(!className.contains(".")){continue;}
                 Class<?> clazz = Class.forName(className);
                 if(clazz.isAnnotationPresent(GPController.class)){
@@ -95,6 +99,7 @@ public class GPDispatcherServlet extends HttpServlet {
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
         }finally {
             if(is != null){
                 try {is.close();} catch (IOException e) {
